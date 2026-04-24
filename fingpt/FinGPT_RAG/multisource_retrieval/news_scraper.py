@@ -150,10 +150,10 @@ def scrape_bloomberg_article_page(url, subject):
     try:
         response = requests_get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
-        headline = soup.select_one('h1', {'class': 'HedAndDek_headline-D19MOidHYLI-'}).text.strip()
+        headline = soup.find('h1', {'class': 'HedAndDek_headline-D19MOidHYLI-'}).text.strip()
 
         bullet_point_texts = ""
-        bullet_points = soup.select('ul', {'class': 'HedAndDek_abstract-XX636-2bHQw-'})
+        bullet_points = soup.find('ul', {'class': 'HedAndDek_abstract-XX636-2bHQw-'})
         if bullet_points:
             lis = bullet_points.find_all('li')
             if lis:
@@ -161,7 +161,7 @@ def scrape_bloomberg_article_page(url, subject):
         headline_plus_bullet_points = headline + ". " + bullet_point_texts
 
         paragraph_texts = ""
-        paragraphs = soup.select_all('p', {'class': 'Paragraph_text-SqIsdNjh0t0-'})
+        paragraphs = soup.find_all('p', {'class': 'Paragraph_text-SqIsdNjh0t0-'})
         for p in paragraphs:
             if "Sign up" in p.text:
                 continue
@@ -378,7 +378,7 @@ def scrape_seeking_alpha(subject):
         for div in divs:
             a = div.find('a', {'class': 'mt-X R-dW R-eB R-fg R-fZ V-gT V-g9 V-hj V-hY V-ib V-ip'})
             link = a.get('href')
-            links = links.append(link)
+            links.append(link)
         print("Found " + str(len(links)) + " links")
 
         for link in links:
@@ -491,11 +491,13 @@ def scrape_twitter(url, subject):
 
 
             if response.status_code == 200:
-                print("Tweet text:", response.json)
-                similarity = similarity_score(subject, tweet.full_text)
+                tweet_data = response.json()
+                tweet_text = tweet_data.get("data", [{}])[0].get("text", "")
+                print("Tweet text:", tweet_text)
+                similarity = similarity_score(subject, tweet_text)
                 if similarity > 0.75:
                     print("Relevant")
-                    return url, subject + ". With full context: " + tweet.full_text
+                    return url, subject + ". With full context: " + tweet_text
             else:
                 print("Error in scrape_twitter", response)
                 return "N/A", subject
